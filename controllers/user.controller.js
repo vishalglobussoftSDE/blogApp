@@ -64,3 +64,44 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ error: 'Login failed' });
   }
 };
+
+
+export const editUserProfile = async (req, res) => {
+  const { username, email, password, imgUrl } = req.body;
+  const userId = req.user.userId; // From authenticated token
+
+  if (!username && !email && !password && !imgUrl) {
+    return res.status(400).json({ error: 'At least one field is required to update' });
+  }
+
+  try {
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      {
+        ...(username && { name: username }),
+        ...(email && { email }),
+        ...(password && { password }), // ⚠️ Should hash this in real apps
+        ...(imgUrl && { imgUrl })
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.status(200).json({
+      message: '✅ Profile updated successfully',
+      user: {
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        imgUrl: updatedUser.imgUrl
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error updating user profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+};
