@@ -67,41 +67,37 @@ export const loginUser = async (req, res) => {
 
 
 export const editUserProfile = async (req, res) => {
-  const { username, email, password, imgUrl } = req.body;
-  const userId = req.user.userId; // From authenticated token
+  const { username, email, password,name} = req.body;
+  const userId = req.user.userId;
+  const imgFile = req.file;
 
-  if (!username && !email && !password && !imgUrl) {
-    return res.status(400).json({ error: 'At least one field is required to update' });
+  if (!username && !email && !password && !imgFile && !name) {
+    return res.status(400).json({ error: 'Nothing to update' });
+  }
+
+  const updateData = {};
+  if (username) updateData.name = username;
+  if (email) updateData.email = email;
+  if (password) updateData.password = password;
+  if(name) updateData.name = name;
+  if (imgFile) {
+    updateData.imgUrl = `data:${imgFile.mimetype};base64,${imgFile.buffer.toString('base64')}`;
+    // You can replace this with cloud upload (S3, Cloudinary, etc.)
   }
 
   try {
     const updatedUser = await userModel.findByIdAndUpdate(
       userId,
-      {
-        ...(username && { name: username }),
-        ...(email && { email }),
-        ...(password && { password }), // ⚠️ Should hash this in real apps
-        ...(imgUrl && { imgUrl })
-      },
+      updateData,
       { new: true, runValidators: true }
     );
 
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
     res.status(200).json({
-      message: '✅ Profile updated successfully',
-      user: {
-        id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        imgUrl: updatedUser.imgUrl
-      }
+      message: '✅ Profile updated',
+      user: updatedUser
     });
   } catch (error) {
-    console.error('❌ Error updating user profile:', error);
+    console.error('❌ Error updating profile:', error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 };
