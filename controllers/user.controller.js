@@ -101,3 +101,6 @@ export const editUserProfile = async (req, res) => {
     res.status(500).json({ error: 'Failed to update profile' });
   }
 };
+export const logOutUser = async(req,res)=>{
+  res.send('working')
+}
